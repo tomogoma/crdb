@@ -2,6 +2,7 @@ package crdb
 
 import (
 	"fmt"
+	"strings"
 )
 
 // More detail at
@@ -22,19 +23,36 @@ type Config struct {
 // FormatDSN formats Config values into a connection as per
 // https://godoc.org/github.com/lib/pq#hdr-Connection_String_Parameters
 func (d Config) FormatDSN() string {
-	return fmt.Sprintf("user='%s' password='%s'"+
-		" host='%s' port=%d dbname='%s'"+
-		" connect_timeout=%d"+
-		" sslmode='%s' sslcert='%s' sslkey='%s' sslrootcert='%s'",
-		d.User,
-		d.Password,
-		d.Host,
-		d.Port,
-		d.DBName,
-		d.ConnectTimeout,
-		d.SSLMode,
-		d.SSLCert,
-		d.SSLKey,
-		d.SSLRootCert,
-	)
+	dsn := ""
+	if d.User != "" {
+		dsn = fmt.Sprintf("%suser='%s' ", dsn, d.User)
+	}
+	if d.Password != "" {
+		dsn = fmt.Sprintf("%spassword='%s' ", dsn, d.Password)
+	}
+	if d.DBName != "" {
+		dsn = fmt.Sprintf("%sdbname='%s' ", dsn, d.DBName)
+	}
+	if d.Host != "" {
+		dsn = fmt.Sprintf("%shost='%s' ", dsn, d.Host)
+	}
+	if d.Port > 0 {
+		dsn = fmt.Sprintf("%sport=%d ", dsn, d.Port)
+	}
+	if d.ConnectTimeout > 0 {
+		dsn = fmt.Sprintf("%sconnect_timeout=%d ", dsn, d.ConnectTimeout)
+	}
+	if d.SSLMode != "" {
+		dsn = fmt.Sprintf("%ssslmode='%s' ", dsn, d.SSLMode)
+	}
+	if d.SSLCert != "" {
+		dsn = fmt.Sprintf("%ssslcert='%s' ", dsn, d.SSLCert)
+	}
+	if d.SSLKey != "" {
+		dsn = fmt.Sprintf("%ssslkey='%s' ", dsn, d.SSLKey)
+	}
+	if d.SSLRootCert != "" {
+		dsn = fmt.Sprintf("%ssslrootcert='%s' ", dsn, d.SSLRootCert)
+	}
+	return strings.TrimSpace(dsn)
 }
