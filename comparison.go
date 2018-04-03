@@ -18,6 +18,10 @@ const (
 	OpLT        = "<"
 	OpIsNull    = "is_null"
 	OpIsNotNull = "is_not_null"
+	// This Operator is not a one to one mapping like the rest
+	OpContain = "CONTAIN"
+	// This Operator is not a one to one mapping like the rest
+	OpContainFold = "CONTAIN_FOLD"
 )
 
 type Comparison struct {
@@ -66,6 +70,10 @@ func WhereClause(c *Comparison, col string, args []interface{}) (string, []inter
 		where = fmt.Sprintf("%s IS NOT NULL", col)
 	case OpET:
 		where = fmt.Sprintf("%s = $%d", col, i)
+	case OpContainFold:
+		where = fmt.Sprintf("LOWER(%s) LIKE '%%' || LOWER($%d) || '%%'", col, i)
+	case OpContain:
+		where = fmt.Sprintf("%s LIKE '%%' || $%d || '%%'", col, i)
 	default:
 		where = fmt.Sprintf("%s %s $%d", col, c.Op, i)
 	}
