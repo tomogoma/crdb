@@ -13,6 +13,7 @@ import (
 	"runtime"
 	"fmt"
 	"path/filepath"
+	"log"
 )
 
 var confFile = flag.String("conf", "dsn.conf.yml", "/path/to/testconf.yml")
@@ -21,7 +22,7 @@ func init() {
 	flag.Parse()
 }
 
-func setUp(t *testing.T) crdb.Config {
+func readConfig(t *testing.T) crdb.Config {
 
 	confB, err := ioutil.ReadFile(*confFile)
 	if err != nil {
@@ -35,8 +36,47 @@ func setUp(t *testing.T) crdb.Config {
 	return conf
 }
 
+func ExampleInstantiateDB() {
+	// 1. Define a DSN to connect to the DB.
+	// See https://godoc.org/github.com/lib/pq#hdr-Connection_String_Parameters
+	// for all DSN options.
+
+	// Config can be read from a JSON or YAML file.
+	config := crdb.Config{
+		User: "root",
+		Port: 26257,
+		DBName: "crdb_test",
+		SSLMode: "require",
+		SSLCert: "/etc/cockroachdb/certs/node.crt",
+		SSLKey: "/etc/cockroachdb/certs/node.key",
+		SSLRootCert: "/etc/cockroachdb/certs/ca.crt",
+	}
+	// config#FormatDSN() yields a string like
+	//    "user='my_username' password='my_strong_password' dbname='my_db_name' sslmode='disable'"
+	// You can use crdb.Config or format DSN on your own.
+	DSN := config.FormatDSN()
+
+	// 2. Connect to and ping the DBMS.
+
+	db, err := crdb.DBConn(DSN)
+	if err != nil {
+		log.Fatalf("Error establishing connection to DB: %v", err)
+	}
+
+	// 3. Instantiate your database and its tables (if not already instantiated)
+
+	tableDescs := []string{
+		"CREATE TABLE IF NOT EXISTS foos (name VARCHAR(25))",
+		"CREATE TABLE IF NOT EXISTS bars (name VARCHAR(25))",
+	}
+	err = crdb.InstantiateDB(db, config.DBName, tableDescs...)
+	if err != nil {
+		log.Fatalf("Error instantiating database: %v", err)
+	}
+}
+
 func TestDBConn(t *testing.T) {
-	validConf := setUp(t)
+	validConf := readConfig(t)
 	tt := []struct {
 		name   string
 		dsn    string
@@ -66,7 +106,7 @@ func TestDBConn(t *testing.T) {
 
 func TestTryConnect(t *testing.T) {
 
-	conf := setUp(t)
+	conf := readConfig(t)
 	db := newConn(t, conf.FormatDSN())
 	defer db.Close()
 
@@ -143,7 +183,7 @@ func TestInstantiateDB(t *testing.T) {
 			expErr: true,
 		},
 	}
-	conf := setUp(t)
+	conf := readConfig(t)
 	var currConf crdb.Config
 
 	for _, tc := range tts {
