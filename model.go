@@ -8,6 +8,7 @@ import (
 
 	"github.com/cockroachdb/cockroach-go/crdb"
 	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 )
 
 type DSNFormatter interface {
@@ -24,7 +25,7 @@ func DBConn(dsn string) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return CloseDBOnError(db, db.Ping())
+	return CloseDBOnError(db, IgnoreDBNotFoundError(db.Ping()))
 }
 
 // InstantiateDB creates the database and tables based on dbName and tableDescs.
@@ -55,6 +56,20 @@ func CloseDBOnError(db *sql.DB, err error) (*sql.DB, error) {
 			err, clErr)
 	}
 	return nil, err
+}
+
+// IgnoreDBNotFoundError returns nil if err is nil
+// or is a *pq.Error and has the DB-not-found code (3D000)
+// otherwise it returns err.
+func IgnoreDBNotFoundError(err error) error {
+	pqErr, ok := err.(*pq.Error)
+	if !ok {
+		return err
+	}
+	if pqErr.Code != "3D000" {
+		return err
+	}
+	return nil
 }
 
 func instantiateDB(db *sql.DB, dbName string, createDB bool, tableDescs ...string) error {

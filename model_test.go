@@ -119,8 +119,8 @@ func TestInstantiateDB(t *testing.T) {
 			name:         "Ok",
 			dbNameSuffix: "",
 			tableDescs: []string{
-				"CREATE TABLE foos (name VARCHAR(25))",
-				"CREATE TABLE bars (name VARCHAR(25))",
+				"CREATE TABLE IF NOT EXISTS foos (name VARCHAR(25))",
+				"CREATE TABLE IF NOT EXISTS bars (name VARCHAR(25))",
 			},
 			expErr: false,
 		},
@@ -128,8 +128,8 @@ func TestInstantiateDB(t *testing.T) {
 			name:         "BadDBName",
 			dbNameSuffix: "-abc", // Hyphens(-) not allowed in db name in CockroachDB
 			tableDescs: []string{
-				"CREATE TABLE foos (name VARCHAR(25))",
-				"CREATE TABLE bars (name VARCHAR(25))",
+				"CREATE TABLE IF NOT EXISTS foos (name VARCHAR(25))",
+				"CREATE TABLE IF NOT EXISTS bars (name VARCHAR(25))",
 			},
 			expErr: true,
 		},
@@ -137,8 +137,8 @@ func TestInstantiateDB(t *testing.T) {
 			name:         "BadTableDesc",
 			dbNameSuffix: "",
 			tableDescs: []string{
-				"CREATE TABLE foos (name VARCHAR(25))",
-				"CREATE TABLE bars (name VARCHARS(25))", // VARCHARS is not valid SQL keyword
+				"CREATE TABLE IF NOT EXISTS foos (name VARCHAR(25))",
+				"CREATE TABLE IF NOT EXISTS bars (name VARCHARS(25))", // VARCHARS is not valid SQL keyword
 			},
 			expErr: true,
 		},
@@ -197,6 +197,7 @@ func newConn(t *testing.T, DSN string) *sql.DB {
 
 func tearDown(t *testing.T, db *sql.DB, dbName string) {
 	_, err := db.Exec("DROP DATABASE IF EXISTS " + dbName + " CASCADE")
+	err = crdb.IgnoreDBNotFoundError(err)
 	if err != nil {
 		t.Fatalf("Failed teardown: %v", err)
 	}
