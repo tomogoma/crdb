@@ -3,6 +3,7 @@ package crdb
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 // More detail at
@@ -18,6 +19,10 @@ type Config struct {
 	SSLCert        string `json:"sslCert,omitempty" yaml:"sslCert,omitempty"`
 	SSLKey         string `json:"sslKey,omitempty" yaml:"sslKey,omitempty"`
 	SSLRootCert    string `json:"sslRootCert,omitempty" yaml:"sslRootCert,omitempty"`
+
+	ConnMaxLifetime *time.Duration `json:"connMaxLifeTime,omitempty" yaml:"connMaxLifeTime,omitempty"`
+	MaxIdleConns    *int           `json:"maxIdleConns,omitempty" yaml:"maxIdleConns,omitempty"`
+	MaxOpenConns    *int           `json:"maxOpenConns,omitempty" yaml:"maxOpenConns,omitempty"`
 }
 
 // FormatDSN formats Config values into a connection as per
